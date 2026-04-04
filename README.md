@@ -1,6 +1,16 @@
-# Tasks App API
+<h1 align="center">Task Manager — Backend</h1>
+<p align="center">
+  A scalable and production-ready Task Management API built with modern backend technologies and best practices.
+</p>
 
-A scalable and production-ready Task Management API built with modern backend technologies and best practices.
+<p align="center"> 
+  <img src="https://img.shields.io/badge/NestJS-E0234E?style=flat-square&logo=nestjs" /> 
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript" /> 
+  <img src="https://img.shields.io/badge/Prisma-2D3748?style=flat-square&logo=prisma" /> 
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql" /> 
+</p>
+
+---
 
 ## 📌 Overview
 

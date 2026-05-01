@@ -26,7 +26,9 @@ model Task {
   description String?    @db.Text
   status      TaskStatus @default(PENDING)
   priority    Priority   @default(MEDIUM)
-  dueDate     DateTime?
+  impact        Int        @default(1) // Scale 1-5 (Business Metric)
+  effort        Int        @default(1) // Scale 1-5 (Technical Metric)
+  priorityScore Float      @default(0) // The "Brain": calculated as (impact * 2) / effort
   
   // Relation with user (Task owner)
   userId      String
@@ -38,6 +40,7 @@ model Task {
   // Critical indices for performance in production (Big Tech Standard)
   @@index([userId])            // To load user dashboard quickly
   @@index([status, priority])   // To filter combined in the UI
+  @@index([priorityScore(sort: Desc)]) // To quickly find high-priority tasks
 }
 
 enum TaskStatus {

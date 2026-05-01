@@ -1,3 +1,5 @@
+// src/tasks/tasks.service.ts
+
 import {
   Injectable,
   NotFoundException,
@@ -8,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Prisma } from '@prisma/client';
+import { calculatePriorityScore, explainPriority } from './utils/task-math.util';
 
 @Injectable()
 export class TasksService {
@@ -15,74 +18,106 @@ export class TasksService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Retrieves all tasks for a specific user, ordered by priority score.
+   */
   async findAll(userId: string) {
     try {
       return await this.prisma.task.findMany({
         where: { userId },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { priorityScore: 'desc' },
       });
     } catch (error) {
-      const errorStack = error instanceof Error ? error.stack : String(error);
-      this.logger.error(`Failed to fetch tasks for user ${userId}`, errorStack);
-      throw new InternalServerErrorException('Error retrieving tasks');
+      this.logger.error(`Failed to fetch tasks for user ${userId}`, error instanceof Error ? error.stack : String(error));
+      throw new InternalServerErrorException('An unexpected error occurred while retrieving tasks.');
     }
   }
 
+  /**
+   * Retrieves a single task ensuring user ownership.
+   */
   async findOne(id: string, userId: string) {
-    // Usamos una query combinada para validar existencia y propiedad en un solo paso
     const task = await this.prisma.task.findFirst({
       where: { id, userId },
     });
 
     if (!task) {
-      throw new NotFoundException(`Task with ID "${id}" not found or access denied`);
+      throw new NotFoundException(`Task with ID "${id}" not found.`);
     }
 
     return task;
   }
 
+  /**
+   * Creates a new task and automatically computes its priority score.
+   */
   async create(userId: string, dto: CreateTaskDto) {
+    const score = calculatePriorityScore(dto.impact, dto.effort);
+
     return this.prisma.task.create({
       data: {
         ...dto,
-        // Manejo robusto de fechas
         dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
-        user: { connect: { id: userId } }, // Usar relaciones de Prisma es más limpio
+        priorityScore: score,
+        user: { connect: { id: userId } },
       },
     });
   }
 
+  /**
+   * Updates a task and recalculates priority score if impact or effort changed.
+   */
   async update(id: string, userId: string, dto: UpdateTaskDto) {
+    // 1. Check if recalculation is needed
+    let newScore: number | undefined;
+    
+    if (dto.impact !== undefined || dto.effort !== undefined) {
+      const currentTask = await this.findOne(id, userId);
+      newScore = calculatePriorityScore(
+        dto.impact ?? currentTask.impact,
+        dto.effort ?? currentTask.effort,
+      );
+    }
+
     try {
-      // ATÓMICO: Intentamos actualizar directamente con el filtro de userId
-      // Esto evita la doble consulta (findOne + update)
       return await this.prisma.task.update({
-        where: { id, userId }, // Prisma permite filtrar por campos únicos + otros en update
+        where: { id, userId },
         data: {
           ...dto,
           dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
+          priorityScore: newScore,
         },
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        throw new NotFoundException(`Task "${id}" not found`);
+        throw new NotFoundException(`Task with ID "${id}" not found.`);
       }
       throw error;
     }
   }
 
+  /**
+   * Atomically deletes a task.
+   */
   async remove(id: string, userId: string) {
     try {
-      // Borrado atómico por seguridad y performance
       await this.prisma.task.delete({
         where: { id, userId },
       });
-      return { deleted: true };
+      return { success: true, message: 'Task deleted successfully.' };
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        throw new NotFoundException(`Task "${id}" not found`);
+        throw new NotFoundException(`Task with ID "${id}" not found.`);
       }
       throw error;
     }
+  }
+
+  /**
+   * Provides the logic behind the task's priority score.
+   */
+  async getExplanation(taskId: string, userId: string) {
+    const task = await this.findOne(taskId, userId);
+    return explainPriority(task.impact, task.effort);
   }
 }

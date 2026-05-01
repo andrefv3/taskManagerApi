@@ -1,0 +1,33 @@
+# Dependencias y compilados
+node_modules
+dist
+.next
+.vercel
+out
+build
+
+# Archivos de entorno y logs
+.env
+.env.*
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Git
+.git
+.gitignore
+
+# Archivos de sistema y editores
+.DS_Store
+.vscode
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Documentación innecesaria para el despliegue
+README.md
+docs

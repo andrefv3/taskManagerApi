@@ -1,9 +1,19 @@
-import { IsString, IsOptional, IsEnum, IsDateString } from 'class-validator';
+import { 
+  IsString, 
+  IsOptional, 
+  IsEnum, 
+  IsDateString, 
+  IsInt, 
+  Min, 
+  Max, 
+  MinLength 
+} from 'class-validator';
 import { TaskStatus, Priority } from '@prisma/client';
 
 export class UpdateTaskDto {
   @IsString()
   @IsOptional()
+  @MinLength(3, { message: 'Title must be at least 3 characters long' })
   title?: string;
 
   @IsString()
@@ -21,4 +31,19 @@ export class UpdateTaskDto {
   @IsDateString()
   @IsOptional()
   dueDate?: string;
+
+  // --- DECISION ENGINE FIELDS ---
+  // We include these so the user can adjust the priority logic
+
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  @IsOptional()
+  impact?: number;
+
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  @IsOptional()
+  effort?: number;
 }

@@ -1,6 +1,6 @@
-<h1 align="center">Task Manager — Backend</h1>
+<h1 align="center">Kynetic — Backend</h1>
 <p align="center">
-  A scalable and production-ready Task Management API built with modern backend technologies and best practices.
+  A scalable and production-ready Kynetic built with modern backend technologies and best practices.
 </p>
 
 <p align="center"> 

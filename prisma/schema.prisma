@@ -8,17 +8,30 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String   
-  name      String
-  lastName  String
-  tasks     Task[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String          @id @default(uuid())
+  email              String          @unique
+  // 1. Opcional para soportar usuarios de Google
+  password           String?   
+  name               String
+  lastName           String?         // 2. Opcional (Google a veces solo da 'name')
+  profilePicture     String?         
+  
+  // 3. Campos específicos para OAuth
+  googleId           String?         @unique // Para vincular la cuenta de forma única
+  provider           AuthProvider    @default(LOCAL) // "local" or "google"
+  
+  tasks              Task[]
+  
+  // 4. Gestión de estado
+  isVerified         Boolean         @default(false) 
+  verificationCode   String?                 
+  codeExpires        DateTime?             
+  
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
 
-  // Index for optimizing login and profile lookups
   @@index([email])
+  @@index([googleId]) 
 }
 
 model Task {
@@ -42,6 +55,11 @@ model Task {
   @@index([userId])            // To load user dashboard quickly
   @@index([status, priority])   // To filter combined in the UI
   @@index([priorityScore(sort: Desc)]) // To quickly find high-priority tasks
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
 }
 
 enum TaskStatus {

@@ -4,16 +4,21 @@ import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
+import { PrismaModule } from '../prisma/prisma.module'; 
+import { MailService } from 'src/mail/mail.service';
 
 @Module({
   imports: [
+    PrismaModule, 
     PassportModule,
     JwtModule.register({
+      global: true, 
       secret: process.env.JWT_SECRET || 'secret',
       signOptions: { expiresIn: '7d' },
     }),
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
+  exports: [AuthService], 
 })
 export class AuthModule {}
